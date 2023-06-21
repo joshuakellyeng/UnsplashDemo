@@ -1,26 +1,25 @@
 package com.joshk.android.unsplashapp
 
-import android.annotation.SuppressLint
-import android.app.Application
 import android.os.Bundle
-import android.util.Log
+import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelProvider
-import androidx.room.Room
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.joshk.android.unsplashapp.databinding.ActivityMainBinding
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers.mainThread
-import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.schedulers.Schedulers
 
-class MainActivity(application: Application) : AppCompatActivity() {
+private const val TAG = "MainActivity"
+
+class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var mainViewModel: MainViewModel
 
+    private lateinit var photoDao: PhotoDao
+
+    private var isAllFabsVisible: Boolean? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,29 +28,44 @@ class MainActivity(application: Application) : AppCompatActivity() {
 
         setContentView(binding.root)
 
-        mainViewModel = ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(application))
-            .get(MainViewModel::class.java)
+        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
 
+        isAllFabsVisible = false
+        binding.btnLikeFab.hide()
+        binding.btnNextFab.hide()
+
+        binding.btnAddFab.setOnClickListener(View.OnClickListener {
+            (if (!isAllFabsVisible!!) {
+
+                binding.btnLikeFab.show()
+                binding.btnNextFab.show()
+
+                true
+            } else {
+                binding.btnLikeFab.hide()
+                binding.btnNextFab.hide()
+
+                false
+            }).also { isAllFabsVisible = it }
+        })
 //        Manual fetch
-        binding.btnGetImage.setOnClickListener {
+        binding.btnNextFab.setOnClickListener {
             mainViewModel.fetchImage()
-
+            Toast.makeText(this, "New Photo", Toast.LENGTH_SHORT).show()
         }
-//        Start slideshow function
-//        mainViewModel.startSlideShow()
 
-//
+//        Like Photo
+        binding.btnLikeFab.setOnClickListener {
+            mainViewModel.handlePhoto()
+        }
+
+
         mainViewModel.photo.observe(this) {
-            setImageView(it)
-            mainViewModel.toInsertPhoto(,it.imageUrl.small.toString())
+            Glide.with(binding.imageView)
+                .load(it.imageUrl.regular)
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .into(binding.imageView)
         }
-    }
-
-    private fun setImageView(it: ImageResponse) {
-        Glide.with(binding.imageView)
-            .load(it.imageUrl.small)
-            .transition(DrawableTransitionOptions.withCrossFade())
-            .into(binding.imageView)
     }
 
 }

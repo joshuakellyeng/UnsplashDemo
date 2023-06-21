@@ -3,32 +3,29 @@ package com.joshk.android.unsplashapp
 
 import android.app.Application
 import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.room.Room
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers.mainThread
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.schedulers.Schedulers
-import java.util.Timer
 import java.util.concurrent.TimeUnit
-import kotlin.time.DurationUnit
 
-class MainViewModel(application: Application):ViewModel() {
+class MainViewModel(application: Application) : AndroidViewModel(application) {
     var photoDao: PhotoDao
+
     init {
-         photoDao =  GalleryDatabase.getDatabase(application).photoDao()
+        photoDao = GalleryDatabase.getDatabase(application).photoDao()
     }
 
 
-private val _photo = MutableLiveData<ImageResponse>()
+    private val _photo = MutableLiveData<ImageResponse>()
     val photo: LiveData<ImageResponse>
         get() = _photo
 
 //    val photoObservable: Observable<ImageResponse> = _photo.toObservable()
 
-  fun fetchImage() {
+    fun fetchImage() {
         val imageObservable: Observable<ImageResponse> =
             NetworkLayer.unsplashService.getImage()
 
@@ -37,12 +34,44 @@ private val _photo = MutableLiveData<ImageResponse>()
             .subscribeOn(Schedulers.io())
             .subscribe(this::handleResponse, this::handleError)
 
-  }
+    }
+    fun handlePhoto() {
+        photoDao.exists(photo.value?.imageId!!)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeOn(Schedulers.io())
+            .subscribe({
+                Log.d("HandlePhoto", "$it")
+                if(it){
+                    deletePhoto()
+                }else {
+                    toInsertPhoto()
+                }
+            }, { error ->
+                Log.e("HandlePhoto", "Failed Insertion/Deletion")
+            })
+    }
 
 
+    fun toInsertPhoto() {
+      photoDao.insertPhoto(Photo(id = photo.value?.imageId!!, url = photo.value?.imageUrl?.small.toString()))
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeOn(Schedulers.io())
+            .subscribe({
+                Log.d("Insertion", "Insert Success!")
+            }, { error ->
+                Log.e("Insertion", "Insert Failed.")
+            })
+    }
 
-    fun toInsertPhoto(photoId: Int, photoUrl: String){
-        photoDao.insertPhoto(Photo(photoId, photoUrl))
+    fun deletePhoto() {
+        photoDao.deletePhoto(Photo(id = photo.value?.imageId!!, url = photo.value?.imageUrl?.small.toString()))
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeOn(Schedulers.io())
+            .subscribe({
+                Log.d("Deletion", "Delete Success!")
+            }, { error ->
+                Log.d("Deletion", "Delete Failed.")
+            })
     }
 
     fun startSlideShow() {
@@ -53,8 +82,10 @@ private val _photo = MutableLiveData<ImageResponse>()
             .subscribeOn(Schedulers.io())
             .subscribe(this::handleResponse, this::handleError)
     }
+
     private fun handleResponse(imageResponse: ImageResponse) {
-      _photo.value = imageResponse
+        _photo.value = imageResponse
+        Log.d("Photo", "${_photo.value}")
     }
 
     private fun handleError(t: Throwable) {

@@ -6,13 +6,9 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "likedPhotos")
 data class Photo (
-//    @PrimaryKey(autoGenerate = true)
-//    val id: Int,
-//    @ColumnInfo(name = "photo_url")
-//    val url: String
-//    @PrimaryKey(autoGenerate = true)
-    @PrimaryKey(autoGenerate = true)
-    val id: Int,
-//    @ColumnInfo(name = "photo_url")
+
+    @PrimaryKey
+    val id: String,
+    @ColumnInfo(name = "photo_url")
     val url: String
     )
