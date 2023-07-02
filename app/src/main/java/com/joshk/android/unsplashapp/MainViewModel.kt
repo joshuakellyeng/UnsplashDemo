@@ -12,10 +12,10 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
-    var photoDao: PhotoDao
+    var galleryDao: GalleryDao
 
     init {
-        photoDao = GalleryDatabase.getDatabase(application).photoDao()
+        galleryDao = GalleryDatabase.getDatabase(application).galleryDao()
     }
 
 
@@ -25,7 +25,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
 //    val photoObservable: Observable<ImageResponse> = _photo.toObservable()
 
-    fun fetchImage() {
+    fun fetchImage(){
         val imageObservable: Observable<ImageResponse> =
             NetworkLayer.unsplashService.getImage()
 
@@ -33,10 +33,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeOn(Schedulers.io())
             .subscribe(this::handleResponse, this::handleError)
-
     }
     fun handlePhoto() {
-        photoDao.exists(photo.value?.imageId!!)
+        galleryDao.exists(photo.value?.imageId!!)
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeOn(Schedulers.io())
             .subscribe({
@@ -53,7 +52,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
 
     fun toInsertPhoto() {
-      photoDao.insertPhoto(Photo(id = photo.value?.imageId!!, url = photo.value?.imageUrl?.small.toString()))
+      galleryDao.insertPhoto(Photo(id = photo.value?.imageId!!, url = photo.value?.imageUrl?.small.toString()))
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeOn(Schedulers.io())
             .subscribe({
@@ -64,7 +63,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun deletePhoto() {
-        photoDao.deletePhoto(Photo(id = photo.value?.imageId!!, url = photo.value?.imageUrl?.small.toString()))
+        galleryDao.deletePhoto(Photo(id = photo.value?.imageId!!, url = photo.value?.imageUrl?.small.toString()))
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeOn(Schedulers.io())
             .subscribe({
@@ -74,14 +73,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             })
     }
 
-    fun startSlideShow() {
-        Observable
-            .interval(0, 5, TimeUnit.SECONDS)
-            .flatMap { NetworkLayer.unsplashService.getImage() }
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribeOn(Schedulers.io())
-            .subscribe(this::handleResponse, this::handleError)
-    }
 
     private fun handleResponse(imageResponse: ImageResponse) {
         _photo.value = imageResponse

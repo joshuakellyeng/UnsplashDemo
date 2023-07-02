@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(entities = [Photo::class], version = 1)
 abstract class GalleryDatabase: RoomDatabase() {
-    abstract fun photoDao(): PhotoDao
+    abstract fun galleryDao(): GalleryDao
 
     companion object{
         private var dbInstance: GalleryDatabase? = null

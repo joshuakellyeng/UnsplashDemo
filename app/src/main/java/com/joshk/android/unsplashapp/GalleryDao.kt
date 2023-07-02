@@ -8,7 +8,7 @@ import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Single
 
 @Dao
-interface PhotoDao {
+interface GalleryDao {
     @Insert
     fun insertPhoto(photo: Photo): Completable
 

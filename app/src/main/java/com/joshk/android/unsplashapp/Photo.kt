@@ -6,6 +6,8 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "likedPhotos")
 data class Photo (
+//can one value have multiple annotations
+    //Photo class && Image Response have a similar structure can we eliminate one
 
     @PrimaryKey
     val id: String,
