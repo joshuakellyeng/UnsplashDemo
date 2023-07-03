@@ -1,6 +1,7 @@
 package com.joshk.android.unsplashapp
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.view.MenuItem
 import android.view.View
@@ -8,6 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
@@ -35,7 +37,9 @@ class MainActivity : AppCompatActivity() {
 
 
 //      initial call
-        mainViewModel.fetchImage()
+
+
+
 
 //      setup toolbar
         setSupportActionBar(binding.toolbar)
@@ -54,7 +58,18 @@ class MainActivity : AppCompatActivity() {
 
 //        Manual fetch
         binding.btnNext.setOnClickListener {
-            mainViewModel.fetchImage()
+            mainViewModel.getImageLiveData().observe(this, Observer { image ->
+                if (image != null) {
+                    Glide.with(binding.imageView)
+                        .load(image.url)
+                        .transition(DrawableTransitionOptions.withCrossFade())
+                        .into(binding.imageView)
+
+                } else {
+                    Toast.makeText(this, "${image}", Toast.LENGTH_SHORT).show()
+                    Log.d("Fetch", "${image?.url}")
+                }
+            })
             isLiked = false
         }
 //        Like Photo
@@ -74,12 +89,7 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        mainViewModel.photo.observe(this) {
-            Glide.with(binding.imageView)
-                .load(it.imageUrl.regular)
-                .transition(DrawableTransitionOptions.withCrossFade())
-                .into(binding.imageView)
-        }
+
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

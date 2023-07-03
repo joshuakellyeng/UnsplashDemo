@@ -1,6 +1,7 @@
 package com.joshk.android.unsplashapp
 
 
+import com.joshk.android.unsplashapp.data.NetworkResponse
 import io.reactivex.rxjava3.core.Observable
 import retrofit2.http.GET
 
