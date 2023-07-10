@@ -13,7 +13,7 @@ interface GalleryDao {
     fun insertPhoto(photo: Photo): Completable
 
     @Delete
-    fun deletePhoto(photo: Photo): Completable
+    fun deletePhoto(photoId: String): Completable
 
     @Query("SELECT * FROM likedPhotos")
     fun loadAllPhotos(): List<Photo>

@@ -6,28 +6,36 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.joshk.android.unsplashapp.data.ImageRepository
-import com.joshk.android.unsplashapp.data.ImageRepositoryImpl
-import com.joshk.android.unsplashapp.data.NetworkResponse
+import com.joshk.android.unsplashapp.database.ImageRepository
+import com.joshk.android.unsplashapp.database.ImageRepositoryImpl
+import com.joshk.android.unsplashapp.database.NetworkResponse
+import com.joshk.android.unsplashapp.domain.Image
+import com.joshk.android.unsplashapp.network.NetworkLayer
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
-import java.util.concurrent.TimeUnit
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     var galleryDao: GalleryDao
-    private val imageRepository: ImageRepository = ImageRepositoryImpl(NetworkLayer.unsplashService)
+    init {
+        galleryDao = GalleryDatabase.getDatabase(application).galleryDao()
+    }
+    private val imageRepository: ImageRepository = ImageRepositoryImpl(NetworkLayer.unsplashService, galleryDao)
 
     private val imageLiveData = MutableLiveData<Image?>()
     private val loadingLiveData = MutableLiveData<Boolean>()
     private val errorLiveData = MutableLiveData<String>()
 
-    init {
-        galleryDao = GalleryDatabase.getDatabase(application).galleryDao()
-    }
+    private val compositeDisposable = CompositeDisposable()
+
+
     private val _photo = MutableLiveData<ImageResponse>()
     val photo: LiveData<ImageResponse>
         get() = _photo
+
+    private var _isLiked = MutableLiveData<Boolean>()
+    val isLiked: LiveData<Boolean>
+        get() = _isLiked
 
 //    val photoObservable: Observable<ImageResponse> = _photo.toObservable()
     fun getImage() {
@@ -52,6 +60,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
     }
+
+    fun subscribeToBooleanObservable() {
+        val disposable = imageRepository.handlePhoto()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe{value ->
+                compositeDisposable.isDisposed
+            }
+        compositeDisposable.add(disposable)
+    }
+
         fun getImageLiveData(): LiveData<Image?> = imageLiveData
         fun getLoadingLiveData(): LiveData<Boolean> = loadingLiveData
         fun geterrorLiveData(): LiveData<String> = errorLiveData
@@ -65,44 +84,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 //            .subscribeOn(Schedulers.io())
 //            .subscribe(this::handlePhoto, this::handleError)
 //    }
-    fun handlePhoto() {
-        galleryDao.exists(photo.value?.imageId!!)
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribeOn(Schedulers.io())
-            .subscribe({
-                Log.d("HandlePhoto", "$it")
-                if(it){
-                    deletePhoto()
-                }else {
-                    toInsertPhoto()
-                }
-            }, { error ->
-                Log.e("HandlePhoto", "Failed Insertion/Deletion")
-            })
-    }
 
-
-    fun toInsertPhoto() {
-      galleryDao.insertPhoto(Photo(id = photo.value?.imageId!!, url = photo.value?.imageUrl?.small.toString()))
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribeOn(Schedulers.io())
-            .subscribe({
-                Log.d("Insertion", "Insert Success!")
-            }, { error ->
-                Log.e("Insertion", "Insert Failed.")
-            })
-    }
-
-    fun deletePhoto() {
-        galleryDao.deletePhoto(Photo(id = photo.value?.imageId!!, url = photo.value?.imageUrl?.small.toString()))
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribeOn(Schedulers.io())
-            .subscribe({
-                Log.d("Deletion", "Delete Success!")
-            }, { error ->
-                Log.d("Deletion", "Delete Failed.")
-            })
-    }
 
 
 //    private fun handleResponse(imageResponse: ImageResponse) {

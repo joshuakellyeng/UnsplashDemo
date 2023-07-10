@@ -1,4 +1,4 @@
-package com.joshk.android.unsplashapp.data
+package com.joshk.android.unsplashapp.database
 
 sealed class NetworkResponse<out T> {
     class Success<out T>(val data:T): NetworkResponse<T>()

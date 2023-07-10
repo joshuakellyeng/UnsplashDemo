@@ -2,7 +2,6 @@ package com.joshk.android.unsplashapp
 
 import android.os.Bundle
 import android.util.Log
-import android.view.Gravity
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
@@ -35,12 +34,6 @@ class MainActivity : AppCompatActivity() {
         mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
 
 
-
-//      initial call
-
-
-
-
 //      setup toolbar
         setSupportActionBar(binding.toolbar)
        // Enable the navigation button on the app bar
@@ -55,22 +48,12 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
+        // initial call
+        handleFetchRequest()
 
 //        Manual fetch
         binding.btnNext.setOnClickListener {
-            mainViewModel.getImageLiveData().observe(this, Observer { image ->
-                if (image != null) {
-                    Glide.with(binding.imageView)
-                        .load(image.url)
-                        .transition(DrawableTransitionOptions.withCrossFade())
-                        .into(binding.imageView)
-
-                } else {
-                    Toast.makeText(this, "${image}", Toast.LENGTH_SHORT).show()
-                    Log.d("Fetch", "${image?.url}")
-                }
-            })
-            isLiked = false
+            handleFetchRequest()
         }
 //        Like Photo
         binding.btnLike.setOnClickListener {
@@ -88,8 +71,6 @@ class MainActivity : AppCompatActivity() {
             mainViewModel.handlePhoto()
         }
 
-
-
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -101,5 +82,21 @@ class MainActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
 
         }
+    }
+
+    private fun handleFetchRequest() {
+        mainViewModel.getImage()
+        mainViewModel.getImageLiveData().observe(this, Observer {
+            if (it != null) {
+                Glide.with(binding.imageView)
+                    .load(it.url)
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(binding.imageView)
+
+            } else {
+                Toast.makeText(this, "${it}", Toast.LENGTH_SHORT).show()
+                Log.d("Fetch", "${it?.url}")
+            }
+        })
     }
 }
